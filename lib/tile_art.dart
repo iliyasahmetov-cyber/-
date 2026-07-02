@@ -142,17 +142,26 @@ class TilePainter extends CustomPainter {
         Paint()..color = AppTheme.tileSelected.withValues(alpha: 0.14),
       );
     } else if (state == TileVisualState.hint) {
-      final pulse = 0.35 + 0.45 * glow;
+      final pulse = 0.65 + 0.35 * glow;
+      // Outer halo so the hinted pair is easy to spot for older players.
+      canvas.drawRRect(
+        rrect.inflate(2),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5
+          ..color = AppTheme.tileHint.withValues(alpha: pulse)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
       canvas.drawRRect(
         rrect,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
+          ..strokeWidth = 4
           ..color = AppTheme.tileHint.withValues(alpha: pulse),
       );
       canvas.drawRRect(
         rrect,
-        Paint()..color = AppTheme.tileHint.withValues(alpha: 0.10 + 0.14 * glow),
+        Paint()..color = AppTheme.tileHint.withValues(alpha: 0.22 + 0.18 * glow),
       );
     }
   }

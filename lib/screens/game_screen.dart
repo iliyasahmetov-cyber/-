@@ -159,12 +159,9 @@ class _GameScreenState extends State<GameScreen>
     _engine.resume();
     _busy = false;
     if (watched) {
-      final pair = _engine.revealHint();
-      if (pair != null) {
-        Future<void>.delayed(const Duration(seconds: 4), () {
-          if (mounted) _engine.clearHint();
-        });
-      }
+      // The highlighted pair persists until the player taps a tile
+      // (GameEngine.select clears the hint on the next interaction).
+      _engine.revealHint();
     }
   }
 
