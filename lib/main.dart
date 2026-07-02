@@ -8,9 +8,10 @@ import 'theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Landscape gameplay: the 12×8 board is wider than tall, so tiles are larger.
   SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
   AudioManager.instance.init();
   runApp(const PaoPaoApp());

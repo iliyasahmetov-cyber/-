@@ -175,7 +175,6 @@ void main() {
       expect(engine.score, 10);
       engine.nextLevel();
       expect(engine.score, 10);
-      expect(engine.lives, engine.startLives);
     });
   });
 }

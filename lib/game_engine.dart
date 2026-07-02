@@ -29,14 +29,16 @@ class MoveResult {
 
 /// Core logical matrix + rules for the "Pao Pao" (Onet Connect) board.
 ///
-/// Holds an 8×12 grid, tile generation, selection/matching, scoring, lives,
+/// Holds a 12×8 landscape grid, tile generation, selection/matching, scoring,
 /// the countdown clock, hint search and deadlock shuffling. It is a
 /// [ChangeNotifier] so screens can rebuild reactively.
+///
+/// There are intentionally no "lives": mistakes are free, and the only pressure
+/// is the countdown timer (topped up by watching a rewarded video).
 class GameEngine extends ChangeNotifier {
   GameEngine({
-    this.cols = 8,
-    this.rows = 12,
-    this.startLives = 3,
+    this.cols = 12,
+    this.rows = 8,
     this.minTileTypes = 8,
     this.maxTileTypes = 16,
     this.baseSecondsPerPair = 7.0,
@@ -47,11 +49,9 @@ class GameEngine extends ChangeNotifier {
   })  : _random = random ?? Random(),
         _grid = List.generate(rows, (_) => List<int>.filled(cols, 0));
 
-  /// 8 columns wide, 12 rows tall.
+  /// 12 columns wide, 8 rows tall (landscape).
   final int cols;
   final int rows;
-
-  final int startLives;
 
   /// Difficulty envelope. Distinct tile designs grow with the level (harder to
   /// tell apart) while the time budget per pair shrinks.
@@ -71,7 +71,6 @@ class GameEngine extends ChangeNotifier {
   int _level = 1;
   int _tileTypes = 8;
   int _score = 0;
-  int _lives = 0;
   int _secondsRemaining = 0;
   int _maxSeconds = 0;
   int _remainingTiles = 0;
@@ -102,7 +101,6 @@ class GameEngine extends ChangeNotifier {
   List<List<int>> get grid => _grid;
   Coord? get selected => _selected;
   int get score => _score;
-  int get lives => _lives;
   int get secondsRemaining => _secondsRemaining;
   int get maxSeconds => _maxSeconds;
 
@@ -130,7 +128,6 @@ class GameEngine extends ChangeNotifier {
   /// Start a brand new game from [level] (score reset).
   void newGame({int level = 1}) {
     _score = 0;
-    _lives = startLives;
     _configureForLevel(level);
     _selected = null;
     _clearHint();
@@ -139,9 +136,8 @@ class GameEngine extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Advance to the next level, keeping the score and refilling lives.
+  /// Advance to the next level, keeping the score.
   void nextLevel() {
-    _lives = startLives;
     _configureForLevel(_level + 1);
     _selected = null;
     _clearHint();
@@ -260,8 +256,8 @@ class GameEngine extends ChangeNotifier {
     );
 
     if (path == null) {
-      // Correct guess of identity but no legal line → costs a life.
-      _lives = (_lives - 1).clamp(0, startLives);
+      // Same design but no legal line. Mistakes are free — just move the
+      // selection to the newly tapped tile.
       _selected = tapped;
       notifyListeners();
       return MoveResult(MoveType.invalid, a: first, b: tapped);
@@ -391,18 +387,13 @@ class GameEngine extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addLife(int amount) {
-    _lives = (_lives + amount).clamp(0, startLives + amount);
-    notifyListeners();
-  }
-
   void pause() {
     _isRunning = false;
     notifyListeners();
   }
 
   void resume() {
-    if (!isComplete && _lives > 0 && _secondsRemaining > 0) {
+    if (!isComplete && _secondsRemaining > 0) {
       _isRunning = true;
       notifyListeners();
     }

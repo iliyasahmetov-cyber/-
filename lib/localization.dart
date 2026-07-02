@@ -141,8 +141,8 @@ class AppStrings {
       AppLanguage.en: 'Out of lives!',
     },
     'adRewardPrompt': {
-      AppLanguage.ru: 'Просмотри видео, чтобы получить +1 жизнь / +60 секунд',
-      AppLanguage.en: 'Watch video for +1 Life / +60 seconds',
+      AppLanguage.ru: 'Просмотри видео, чтобы получить +60 секунд',
+      AppLanguage.en: 'Watch video for +60 seconds',
     },
     'adHintPrompt': {
       AppLanguage.ru:

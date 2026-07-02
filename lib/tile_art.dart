@@ -50,7 +50,7 @@ class TilePainter extends CustomPainter {
     final rect = Offset.zero & size;
     final radius = size.shortestSide * 0.18;
     final rrect = RRect.fromRectAndRadius(
-      rect.deflate(size.shortestSide * 0.06),
+      rect.deflate(size.shortestSide * 0.035),
       Radius.circular(radius),
     );
 

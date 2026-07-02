@@ -80,13 +80,10 @@ class _GameScreenState extends State<GameScreen>
       _lineCtrl.forward(from: 0);
       await _afterMatch();
     } else if (result.type == MoveType.firstSelection ||
-        result.type == MoveType.switchSelection) {
+        result.type == MoveType.switchSelection ||
+        result.type == MoveType.invalid) {
+      // Mistakes are free — just a soft tap sound.
       AudioManager.instance.playSelect();
-    } else if (result.type == MoveType.invalid) {
-      AudioManager.instance.playSelect();
-      if (_engine.lives <= 0) {
-        await _handleOutOfLives();
-      }
     }
   }
 
@@ -126,28 +123,9 @@ class _GameScreenState extends State<GameScreen>
     _busy = true;
     _engine.pause();
     final watched =
-        await _ads.offerRewardedVideo(context, AdRewardKind.extraTimeAndLife);
+        await _ads.offerRewardedVideo(context, AdRewardKind.extraTime);
     if (!mounted) return;
     if (watched) {
-      _engine.addTime(60);
-      _engine.addLife(1);
-      _engine.resume();
-      _busy = false;
-    } else {
-      _busy = false;
-      await _showEndDialog(win: false);
-    }
-  }
-
-  Future<void> _handleOutOfLives() async {
-    if (_busy) return;
-    _busy = true;
-    _engine.pause();
-    final watched =
-        await _ads.offerRewardedVideo(context, AdRewardKind.extraTimeAndLife);
-    if (!mounted) return;
-    if (watched) {
-      _engine.addLife(1);
       _engine.addTime(60);
       _engine.resume();
       _busy = false;
@@ -294,7 +272,6 @@ class _GameScreenState extends State<GameScreen>
                 children: [
                   _buildHud(),
                   Expanded(child: _buildBoard()),
-                  _buildFooter(),
                 ],
               ),
             ),
@@ -305,33 +282,31 @@ class _GameScreenState extends State<GameScreen>
   }
 
   Widget _buildHud() {
+    final low = _engine.secondsRemaining <= 15;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 4),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // Compact single-row status bar (landscape friendly).
           Row(
             children: [
               IconButton(
+                visualDensity: VisualDensity.compact,
                 onPressed: _confirmQuit,
                 icon: const Icon(Icons.arrow_back_rounded,
                     color: AppTheme.textPrimary),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.surfaceHigh),
-                ),
-                child: Text(
-                  '${_loc.t('level')} ${_engine.level}',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
+              _pill(Icons.layers_rounded, '${_engine.level}',
+                  label: _loc.t('level')),
+              const SizedBox(width: 8),
+              _pill(Icons.star_rounded, '${_engine.score}',
+                  label: _loc.t('score')),
+              const SizedBox(width: 8),
+              _pill(
+                Icons.timer_outlined,
+                _engine.formattedTime,
+                highlight: low,
               ),
               const Spacer(),
               const SoundToggleButton(),
@@ -339,32 +314,74 @@ class _GameScreenState extends State<GameScreen>
               _LangMiniToggle(loc: _loc),
             ],
           ),
+          const SizedBox(height: 6),
+          // Time bar + Hint together on one thin row.
           Row(
             children: [
-              _StatCard(
-                icon: Icons.star_rounded,
-                label: _loc.t('score'),
-                value: '${_engine.score}',
+              Expanded(
+                child: _TimeBar(progress: _engine.timeProgress, low: low),
               ),
-              const SizedBox(width: 8),
-              _StatCard(
-                icon: Icons.timer_outlined,
-                label: _loc.t('time'),
-                value: _engine.formattedTime,
-                highlight: _engine.secondsRemaining <= 15,
-              ),
-              const SizedBox(width: 8),
-              _StatCard(
-                icon: Icons.favorite_rounded,
-                label: _loc.t('lives'),
-                value: '${_engine.lives}',
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.accentSoft,
+                  foregroundColor: Colors.black87,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: _useHint,
+                icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
+                label: Text(
+                  _loc.t('hint'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          _TimeBar(
-            progress: _engine.timeProgress,
-            low: _engine.secondsRemaining <= 15,
+        ],
+      ),
+    );
+  }
+
+  Widget _pill(IconData icon, String value,
+      {String? label, bool highlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: highlight ? AppTheme.accent : AppTheme.surfaceHigh,
+          width: highlight ? 1.6 : 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              size: 16,
+              color: highlight ? AppTheme.accent : AppTheme.textSecondary),
+          const SizedBox(width: 6),
+          if (label != null) ...[
+            Text(
+              '$label ',
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          Text(
+            value,
+            style: TextStyle(
+              color: highlight ? AppTheme.accent : AppTheme.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -373,15 +390,16 @@ class _GameScreenState extends State<GameScreen>
 
   Widget _buildBoard() {
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(6, 2, 6, 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = constraints.maxWidth;
           final h = constraints.maxHeight;
-          // Reserve half a cell of margin on each side so connection lines can
-          // travel around the outside border.
-          final cell = (w / (_engine.cols + 1))
-              .clamp(0.0, h / (_engine.rows + 1));
+          // Reserve ~a third of a cell of margin on each side so connection
+          // lines can still travel around the border, while keeping the tiles
+          // as large as possible.
+          final cell = (w / (_engine.cols + 0.7))
+              .clamp(0.0, h / (_engine.rows + 0.7));
           final gridW = cell * _engine.cols;
           final gridH = cell * _engine.rows;
           final marginX = (w - gridW) / 2;
@@ -454,38 +472,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '${_loc.t('tilesLeft')}: ${_engine.remainingTiles}',
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-          ),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.accentSoft,
-              foregroundColor: Colors.black87,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            onPressed: _useHint,
-            icon: const Icon(Icons.lightbulb_outline_rounded),
-            label: Text(
-              _loc.t('hint'),
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _TileView extends StatelessWidget {
@@ -591,66 +577,6 @@ class _TimeBar extends StatelessWidget {
           },
         );
       },
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.highlight = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: highlight ? AppTheme.accent : AppTheme.surfaceHigh,
-            width: highlight ? 1.6 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon,
-                    size: 16,
-                    color: highlight ? AppTheme.accent : AppTheme.textSecondary),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                color: highlight ? AppTheme.accent : AppTheme.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

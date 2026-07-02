@@ -26,7 +26,7 @@ class AudioManager extends ChangeNotifier {
     _initialized = true;
     try {
       await _ambient.setReleaseMode(ReleaseMode.loop);
-      await _ambient.setVolume(0.35);
+      await _ambient.setVolume(0.5);
       await _sfx.setReleaseMode(ReleaseMode.release);
     } catch (_) {
       // Audio is a non-critical enhancement; never let it break gameplay.
@@ -41,7 +41,7 @@ class AudioManager extends ChangeNotifier {
         await _ambient.resume();
       } else {
         _ambientStarted = true;
-        await _ambient.play(AssetSource('audio/ambient.wav'), volume: 0.35);
+        await _ambient.play(AssetSource('audio/ambient.wav'), volume: 0.5);
       }
     } catch (_) {}
   }

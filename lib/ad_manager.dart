@@ -6,7 +6,7 @@ import 'localization.dart';
 import 'theme.dart';
 
 /// Reason a rewarded ad is being offered — controls the prompt copy.
-enum AdRewardKind { extraTimeAndLife, hint }
+enum AdRewardKind { extraTime, hint }
 
 /// Simulated AdMob Rewarded Video manager.
 ///
@@ -41,7 +41,7 @@ class AdManager {
   Future<bool?> _showPrompt(BuildContext context, AdRewardKind kind) {
     final titleKey = switch (kind) {
       AdRewardKind.hint => 'hint',
-      AdRewardKind.extraTimeAndLife => 'adTimeUpTitle',
+      AdRewardKind.extraTime => 'adTimeUpTitle',
     };
     final promptKey =
         kind == AdRewardKind.hint ? 'adHintPrompt' : 'adRewardPrompt';
