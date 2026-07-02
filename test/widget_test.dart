@@ -141,12 +141,41 @@ void main() {
     });
 
     test('timer + reward mutate remaining time', () {
-      final engine = GameEngine(random: Random(4), startSeconds: 5);
+      final engine = GameEngine(random: Random(4), fixedSeconds: 5);
       engine.newGame();
       engine.tickSecond();
       expect(engine.secondsRemaining, 4);
       engine.addTime(60);
       expect(engine.secondsRemaining, 64);
+    });
+
+    test('levels scale: comfortable time on L1, harder & shorter later', () {
+      final engine = GameEngine(random: Random(5));
+      engine.newGame();
+      expect(engine.level, 1);
+      // 48 pairs * 7s = 336s on level 1 (comfortable).
+      expect(engine.secondsRemaining, 336);
+      final l1Types = engine.tileTypes;
+
+      engine.nextLevel();
+      expect(engine.level, 2);
+      // Score carries across levels; time shrinks; difficulty (types) grows.
+      expect(engine.secondsForLevel(2), lessThan(engine.secondsForLevel(1)));
+      expect(engine.tileTypes, greaterThanOrEqualTo(l1Types));
+      expect(engine.secondsForLevel(7), lessThan(engine.secondsForLevel(1)));
+      expect(engine.hasMoves(), isTrue);
+    });
+
+    test('score persists into the next level', () {
+      final engine = GameEngine(random: Random(6));
+      engine.newGame();
+      final pair = engine.findHint()!;
+      engine.select(pair[0].row, pair[0].col);
+      engine.select(pair[1].row, pair[1].col);
+      expect(engine.score, 10);
+      engine.nextLevel();
+      expect(engine.score, 10);
+      expect(engine.lives, engine.startLives);
     });
   });
 }

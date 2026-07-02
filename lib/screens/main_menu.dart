@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../audio_manager.dart';
 import '../localization.dart';
+import '../sound_button.dart';
 import '../theme.dart';
 import '../tile_art.dart';
 import 'game_screen.dart';
@@ -34,6 +36,13 @@ class MainMenuScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: SoundToggleButton(),
+                  ),
+                ),
                 const Spacer(flex: 2),
                 const _LogoTiles(),
                 const SizedBox(height: 28),
@@ -62,6 +71,8 @@ class MainMenuScreen extends StatelessWidget {
                   label: loc.t('play'),
                   primary: true,
                   onTap: () {
+                    // First user gesture → safe to start audio on web.
+                    AudioManager.instance.startAmbient();
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const GameScreen(),

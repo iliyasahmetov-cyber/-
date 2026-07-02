@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'audio_manager.dart';
 import 'localization.dart';
 import 'screens/main_menu.dart';
 import 'theme.dart';
@@ -11,6 +12,7 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  AudioManager.instance.init();
   runApp(const PaoPaoApp());
 }
 

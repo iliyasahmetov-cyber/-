@@ -191,6 +191,10 @@ class AppStrings {
       AppLanguage.ru: 'Играть ещё',
       AppLanguage.en: 'Play Again',
     },
+    'nextLevel': {
+      AppLanguage.ru: 'Следующий уровень',
+      AppLanguage.en: 'Next Level',
+    },
     'shuffling': {
       AppLanguage.ru: 'Нет ходов — перемешиваем плитки…',
       AppLanguage.en: 'No moves left — shuffling tiles…',

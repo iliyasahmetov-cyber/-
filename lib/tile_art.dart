@@ -23,6 +23,10 @@ const List<Color> _inks = [
   Color(0xFF7A6B72), // mauve
   Color(0xFF60727E), // harbour
   Color(0xFF7D765E), // fawn
+  Color(0xFF6F8079), // teal grey
+  Color(0xFF80756B), // taupe
+  Color(0xFF6A6F80), // periwinkle grey
+  Color(0xFF7F6E6E), // rosewood
 ];
 
 /// Paints a single premium, textured tile plus its vector glyph.
@@ -217,6 +221,18 @@ class TilePainter extends CustomPainter {
       case 11:
       case 12:
         _hills(canvas, unit, stroke, ridges: id - 9); // 2,3 ridges
+        break;
+      case 13:
+        _leaf(canvas, unit, stroke, fillSoft, veins: 6, width: 0.5);
+        break;
+      case 14:
+        _rosette(canvas, unit, stroke, fillSoft, petals: 8);
+        break;
+      case 15:
+        _bamboo(canvas, unit, stroke, fill, segments: 4);
+        break;
+      case 16:
+        _hills(canvas, unit, stroke, ridges: 4);
         break;
       default:
         canvas.drawCircle(Offset.zero, unit * 0.5, stroke);

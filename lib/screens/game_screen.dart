@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../ad_manager.dart';
+import '../audio_manager.dart';
 import '../game_engine.dart';
 import '../localization.dart';
 import '../path_finder.dart';
+import '../sound_button.dart';
 import '../theme.dart';
 import '../tile_art.dart';
 
@@ -73,10 +75,15 @@ class _GameScreenState extends State<GameScreen>
     if (_busy || !_engine.isRunning) return;
     final result = _engine.select(r, c);
     if (result.type == MoveType.matched && result.path != null) {
+      AudioManager.instance.playMatch();
       setState(() => _activeLine = result.path!.points);
       _lineCtrl.forward(from: 0);
       await _afterMatch();
+    } else if (result.type == MoveType.firstSelection ||
+        result.type == MoveType.switchSelection) {
+      AudioManager.instance.playSelect();
     } else if (result.type == MoveType.invalid) {
+      AudioManager.instance.playSelect();
       if (_engine.lives <= 0) {
         await _handleOutOfLives();
       }
@@ -206,13 +213,19 @@ class _GameScreenState extends State<GameScreen>
               onPressed: () {
                 Navigator.of(ctx).pop();
                 setState(() {
-                  _engine.newGame();
+                  // Winning advances to the next (harder) level and keeps the
+                  // score; losing restarts from level 1.
+                  if (win) {
+                    _engine.nextLevel();
+                  } else {
+                    _engine.newGame();
+                  }
                   _activeLine = null;
                 });
                 _busy = false;
                 _startClock();
               },
-              child: Text(_loc.t('playAgain')),
+              child: Text(_loc.t(win ? 'nextLevel' : 'playAgain')),
             ),
           ],
         ),
@@ -303,7 +316,26 @@ class _GameScreenState extends State<GameScreen>
                 icon: const Icon(Icons.arrow_back_rounded,
                     color: AppTheme.textPrimary),
               ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.surfaceHigh),
+                ),
+                child: Text(
+                  '${_loc.t('level')} ${_engine.level}',
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
               const Spacer(),
+              const SoundToggleButton(),
+              const SizedBox(width: 8),
               _LangMiniToggle(loc: _loc),
             ],
           ),

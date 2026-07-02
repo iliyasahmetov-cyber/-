@@ -36,9 +36,13 @@ class GameEngine extends ChangeNotifier {
   GameEngine({
     this.cols = 8,
     this.rows = 12,
-    this.tileTypes = 12,
     this.startLives = 3,
-    this.startSeconds = 180,
+    this.minTileTypes = 8,
+    this.maxTileTypes = 16,
+    this.baseSecondsPerPair = 7.0,
+    this.minSecondsPerPair = 3.5,
+    this.secondsPerPairStep = 0.4,
+    this.fixedSeconds,
     Random? random,
   })  : _random = random ?? Random(),
         _grid = List.generate(rows, (_) => List<int>.filled(cols, 0));
@@ -47,21 +51,48 @@ class GameEngine extends ChangeNotifier {
   final int cols;
   final int rows;
 
-  /// Number of distinct, structurally-similar tile designs (1..tileTypes).
-  final int tileTypes;
   final int startLives;
-  final int startSeconds;
+
+  /// Difficulty envelope. Distinct tile designs grow with the level (harder to
+  /// tell apart) while the time budget per pair shrinks.
+  final int minTileTypes;
+  final int maxTileTypes;
+  final double baseSecondsPerPair;
+  final double minSecondsPerPair;
+  final double secondsPerPairStep;
+
+  /// When set, overrides the computed per-level time (used by tests/demos).
+  final int? fixedSeconds;
 
   final Random _random;
   final List<List<int>> _grid;
 
   Coord? _selected;
+  int _level = 1;
+  int _tileTypes = 8;
   int _score = 0;
   int _lives = 0;
   int _secondsRemaining = 0;
   int _maxSeconds = 0;
   int _remainingTiles = 0;
   bool _isRunning = false;
+
+  /// Number of distinct tile designs currently in play.
+  int get tileTypes => _tileTypes;
+
+  /// Current level (1-based). Increases on board completion.
+  int get level => _level;
+
+  /// Comfortable, difficulty-scaled time budget for [level] (seconds).
+  int secondsForLevel(int level) {
+    final pairs = (rows * cols) ~/ 2;
+    final perPair = (baseSecondsPerPair - secondsPerPairStep * (level - 1))
+        .clamp(minSecondsPerPair, baseSecondsPerPair);
+    return (pairs * perPair).round();
+  }
+
+  int _typesForLevel(int level) =>
+      (minTileTypes + (level - 1)).clamp(minTileTypes, maxTileTypes);
 
   // Tiles the hint system is currently highlighting.
   Coord? _hintA;
@@ -96,17 +127,35 @@ class GameEngine extends ChangeNotifier {
     return '$m:$s';
   }
 
-  /// Start a fresh level.
-  void newGame() {
+  /// Start a brand new game from [level] (score reset).
+  void newGame({int level = 1}) {
     _score = 0;
     _lives = startLives;
-    _secondsRemaining = startSeconds;
-    _maxSeconds = startSeconds;
+    _configureForLevel(level);
     _selected = null;
     _clearHint();
     _generateBoard();
     _isRunning = true;
     notifyListeners();
+  }
+
+  /// Advance to the next level, keeping the score and refilling lives.
+  void nextLevel() {
+    _lives = startLives;
+    _configureForLevel(_level + 1);
+    _selected = null;
+    _clearHint();
+    _generateBoard();
+    _isRunning = true;
+    notifyListeners();
+  }
+
+  void _configureForLevel(int level) {
+    _level = level;
+    _tileTypes = _typesForLevel(level);
+    final secs = fixedSeconds ?? secondsForLevel(level);
+    _secondsRemaining = secs;
+    _maxSeconds = secs;
   }
 
   /// Fill the board with evenly distributed, randomly placed pairs and make
@@ -117,8 +166,8 @@ class GameEngine extends ChangeNotifier {
 
     final values = <int>[];
     // Each design must appear an even number of times so everything can pair.
-    final pairsPerType = (total ~/ 2) ~/ tileTypes;
-    for (var t = 1; t <= tileTypes; t++) {
+    final pairsPerType = (total ~/ 2) ~/ _tileTypes;
+    for (var t = 1; t <= _tileTypes; t++) {
       for (var p = 0; p < pairsPerType * 2; p++) {
         values.add(t);
       }
@@ -128,7 +177,7 @@ class GameEngine extends ChangeNotifier {
     while (values.length < total) {
       values.add(next);
       values.add(next);
-      next = next % tileTypes + 1;
+      next = next % _tileTypes + 1;
     }
     values.length = total;
 
