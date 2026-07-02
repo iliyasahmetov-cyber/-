@@ -211,6 +211,65 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  Future<void> _pauseGame() async {
+    if (_busy || !_engine.isRunning) return;
+    _busy = true;
+    _engine.pause(); // freezes the countdown (clock is gated on _busy too)
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AnimatedBuilder(
+        animation: _loc,
+        builder: (ctx, _) => AlertDialog(
+          backgroundColor: AppTheme.surface,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              const Icon(Icons.pause_circle_outline_rounded,
+                  color: AppTheme.accent),
+              const SizedBox(width: 10),
+              Text(
+                _loc.t('paused'),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            '${_loc.t('time')}: ${_engine.formattedTime}   •   '
+            '${_loc.t('level')} ${_engine.level}',
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).pop(); // leave to main menu
+              },
+              child: Text(
+                _loc.t('mainMenu'),
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+              onPressed: () => Navigator.of(ctx).pop(),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(_loc.t('resume')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return; // chose Main Menu → screen already popped
+    _busy = false;
+    _engine.resume();
+  }
+
   Future<void> _confirmQuit() async {
     _busy = true;
     _engine.pause();
@@ -295,6 +354,13 @@ class _GameScreenState extends State<GameScreen>
                 visualDensity: VisualDensity.compact,
                 onPressed: _confirmQuit,
                 icon: const Icon(Icons.arrow_back_rounded,
+                    color: AppTheme.textPrimary),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: _loc.t('pause'),
+                onPressed: _pauseGame,
+                icon: const Icon(Icons.pause_circle_outline_rounded,
                     color: AppTheme.textPrimary),
               ),
               _pill(Icons.layers_rounded, '${_engine.level}',
