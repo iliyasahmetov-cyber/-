@@ -59,6 +59,7 @@ class GameEngine extends ChangeNotifier {
   int _score = 0;
   int _lives = 0;
   int _secondsRemaining = 0;
+  int _maxSeconds = 0;
   int _remainingTiles = 0;
   bool _isRunning = false;
 
@@ -72,6 +73,12 @@ class GameEngine extends ChangeNotifier {
   int get score => _score;
   int get lives => _lives;
   int get secondsRemaining => _secondsRemaining;
+  int get maxSeconds => _maxSeconds;
+
+  /// Remaining time as a 0..1 fraction, for the visual time bar.
+  double get timeProgress =>
+      _maxSeconds == 0 ? 0 : (_secondsRemaining / _maxSeconds).clamp(0.0, 1.0);
+
   int get remainingTiles => _remainingTiles;
   bool get isRunning => _isRunning;
   Coord? get hintA => _hintA;
@@ -94,6 +101,7 @@ class GameEngine extends ChangeNotifier {
     _score = 0;
     _lives = startLives;
     _secondsRemaining = startSeconds;
+    _maxSeconds = startSeconds;
     _selected = null;
     _clearHint();
     _generateBoard();
@@ -329,6 +337,8 @@ class GameEngine extends ChangeNotifier {
 
   void addTime(int seconds) {
     _secondsRemaining += seconds;
+    // Keep the bar accurate when time is extended past its previous maximum.
+    if (_secondsRemaining > _maxSeconds) _maxSeconds = _secondsRemaining;
     notifyListeners();
   }
 

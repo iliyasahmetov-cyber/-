@@ -329,6 +329,11 @@ class _GameScreenState extends State<GameScreen>
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          _TimeBar(
+            progress: _engine.timeProgress,
+            low: _engine.secondsRemaining <= 15,
+          ),
         ],
       ),
     );
@@ -478,6 +483,82 @@ class _TileView extends StatelessWidget {
     }
     return CustomPaint(
       painter: TilePainter(tileId: tileId, state: state),
+    );
+  }
+}
+
+/// Horizontal time gauge (slider-style) so remaining time is obvious at a
+/// glance. Fills from full down to empty and shifts colour as time runs low.
+class _TimeBar extends StatelessWidget {
+  const _TimeBar({required this.progress, required this.low});
+
+  final double progress;
+  final bool low;
+
+  Color get _color {
+    if (progress <= 0.2) return const Color(0xFFB5654B); // muted red
+    if (progress <= 0.45) return AppTheme.accent; // amber
+    return AppTheme.accentSoft; // muted sage
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: progress, end: progress),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.linear,
+      builder: (context, value, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            return Container(
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.surfaceHigh),
+              ),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        width: (w * value).clamp(0.0, w),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [_color.withValues(alpha: 0.85), _color],
+                          ),
+                          boxShadow: low
+                              ? [
+                                  BoxShadow(
+                                    color: _color.withValues(alpha: 0.6),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Text(
+                      LocaleController.instance.t('time'),
+                      style: TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
