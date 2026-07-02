@@ -57,3 +57,29 @@ Flutter SDK is installed at `~/flutter` and is on `PATH` via `~/.bashrc`
   `AnimatedBuilder`. This is deliberate — `main.dart` passes `MainMenuScreen` as
   a `const home`, and a const widget instance is skipped by the root rebuild, so
   each screen must listen to the locale itself to switch languages live.
+- Board size is always the full 8×12 (96 tiles) on every level. Difficulty
+  scales via number of distinct tile designs (`GameEngine.minTileTypes` →
+  `maxTileTypes`) and a shrinking per-pair time budget — never by reducing the
+  tile count. `tile_art.dart` must provide a glyph for every id up to
+  `maxTileTypes` (currently 16) or higher levels would render duplicate shapes.
+- Audio is optional/enhancement-only: `AudioManager` swallows errors so it can
+  never break gameplay. Browsers block autoplay, so ambient starts on the first
+  user gesture (the "Play" button). Regenerate the WAV assets with
+  `python3 tool/generate_audio.py` (procedural, no third-party audio).
+
+### Android / APK builds
+
+- The Android SDK is installed at `~/android-sdk` (cmdline-tools + platform
+  36/35, build-tools 36, NDK 28, CMake) and `ANDROID_HOME`/`PATH` are exported in
+  `~/.bashrc`; `flutter config --android-sdk ~/android-sdk` has been run. JDK 21
+  is the system Java. These persist via the VM snapshot and are NOT part of the
+  update script (do not add SDK installation there).
+- Build an installable APK: `flutter build apk --release`
+  (output: `build/app/outputs/flutter-apk/app-release.apk`). Release is signed
+  with the debug keystore (see `android/app/build.gradle.kts`) so it installs on
+  a device; for Google Play upload, add a real release `signingConfig` /
+  keystore and prefer `flutter build appbundle` (AAB).
+- If the SDK is ever missing on a fresh VM, reinstall cmdline-tools from
+  `https://developer.android.com/studio` (Linux command-line tools zip), run
+  `sdkmanager --licenses`, then `flutter build apk` (Gradle auto-installs the
+  matching platform/NDK/CMake).
