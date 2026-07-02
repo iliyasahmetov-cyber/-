@@ -327,11 +327,26 @@ class _GameScreenState extends State<GameScreen>
           child: SafeArea(
             child: AnimatedBuilder(
               animation: Listenable.merge([_engine, _loc]),
-              builder: (context, _) => Column(
-                children: [
-                  _buildHud(),
-                  Expanded(child: _buildBoard()),
-                ],
+              builder: (context, _) => LayoutBuilder(
+                builder: (context, c) {
+                  // Landscape → controls in a side panel so the board can use
+                  // the full height and the tiles are as large as possible.
+                  final landscape = c.maxWidth > c.maxHeight;
+                  if (landscape) {
+                    return Row(
+                      children: [
+                        Expanded(child: _buildBoard()),
+                        _buildSidePanel(c.maxWidth),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      _buildHud(),
+                      Expanded(child: _buildBoard()),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -413,39 +428,108 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _pill(IconData icon, String value,
-      {String? label, bool highlight = false}) {
+  /// Vertical control/status panel shown in landscape.
+  Widget _buildSidePanel(double screenWidth) {
+    final low = _engine.secondsRemaining <= 15;
+    final panelW = screenWidth * 0.24 < 150
+        ? 150.0
+        : (screenWidth * 0.24 > 240 ? 240.0 : screenWidth * 0.24);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      width: panelW,
+      padding: const EdgeInsets.fromLTRB(8, 6, 10, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: _confirmQuit,
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: AppTheme.textPrimary),
+              ),
+              IconButton(
+                tooltip: _loc.t('pause'),
+                onPressed: _pauseGame,
+                icon: const Icon(Icons.pause_circle_outline_rounded,
+                    color: AppTheme.textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          _pill(Icons.layers_rounded, '${_engine.level}',
+              label: _loc.t('level'), stretch: true),
+          const SizedBox(height: 8),
+          _pill(Icons.star_rounded, '${_engine.score}',
+              label: _loc.t('score'), stretch: true),
+          const SizedBox(height: 8),
+          _pill(Icons.timer_outlined, _engine.formattedTime,
+              label: _loc.t('time'), highlight: low, stretch: true),
+          const SizedBox(height: 8),
+          _TimeBar(progress: _engine.timeProgress, low: low),
+          const Spacer(),
+          SizedBox(
+            height: 54,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.accentSoft,
+                foregroundColor: Colors.black87,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              onPressed: _useHint,
+              icon: const Icon(Icons.lightbulb_outline_rounded),
+              label: Text(_loc.t('hint')),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SoundToggleButton(),
+              _LangMiniToggle(loc: _loc),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pill(IconData icon, String value,
+      {String? label, bool highlight = false, bool stretch = false}) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: stretch ? 11 : 7),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: highlight ? AppTheme.accent : AppTheme.surfaceHigh,
           width: highlight ? 1.6 : 1,
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: stretch ? MainAxisSize.max : MainAxisSize.min,
         children: [
           Icon(icon,
-              size: 16,
+              size: stretch ? 18 : 16,
               color: highlight ? AppTheme.accent : AppTheme.textSecondary),
           const SizedBox(width: 6),
-          if (label != null) ...[
+          if (label != null)
             Text(
               '$label ',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textSecondary,
-                fontSize: 12,
+                fontSize: stretch ? 13 : 12,
               ),
             ),
-          ],
+          if (stretch) const Spacer(),
           Text(
             value,
             style: TextStyle(
               color: highlight ? AppTheme.accent : AppTheme.textPrimary,
-              fontSize: 15,
+              fontSize: stretch ? 19 : 15,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -456,16 +540,16 @@ class _GameScreenState extends State<GameScreen>
 
   Widget _buildBoard() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 2, 6, 8),
+      padding: const EdgeInsets.fromLTRB(6, 4, 4, 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = constraints.maxWidth;
           final h = constraints.maxHeight;
-          // Reserve ~a third of a cell of margin on each side so connection
-          // lines can still travel around the border, while keeping the tiles
-          // as large as possible.
-          final cell = (w / (_engine.cols + 0.7))
-              .clamp(0.0, h / (_engine.rows + 0.7));
+          // Reserve a small margin on each side so connection lines can still
+          // travel around the border, while keeping the tiles as large as
+          // possible.
+          final cell = (w / (_engine.cols + 0.5))
+              .clamp(0.0, h / (_engine.rows + 0.5));
           final gridW = cell * _engine.cols;
           final gridH = cell * _engine.rows;
           final marginX = (w - gridW) / 2;

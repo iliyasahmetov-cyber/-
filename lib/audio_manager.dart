@@ -25,9 +25,17 @@ class AudioManager extends ChangeNotifier {
     if (_initialized) return;
     _initialized = true;
     try {
+      // Mix without grabbing exclusive audio focus, so playing a tap sound
+      // does NOT pause the looping background music.
+      final ctx =
+          AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers)
+              .build();
+      await AudioPlayer.global.setAudioContext(ctx);
       await _ambient.setReleaseMode(ReleaseMode.loop);
+      await _ambient.setAudioContext(ctx);
       await _ambient.setVolume(0.5);
       await _sfx.setReleaseMode(ReleaseMode.release);
+      await _sfx.setAudioContext(ctx);
     } catch (_) {
       // Audio is a non-critical enhancement; never let it break gameplay.
     }

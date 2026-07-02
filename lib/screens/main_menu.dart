@@ -32,67 +32,109 @@ class MainMenuScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: SoundToggleButton(),
-                  ),
-                ),
-                const Spacer(flex: 2),
-                const _LogoTiles(),
-                const SizedBox(height: 28),
-                Text(
-                  loc.t('appTitle'),
-                  style: const TextStyle(
-                    fontSize: 46,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 3,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  loc.t('appSubtitle'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-                const Spacer(flex: 2),
-                _MenuButton(
-                  icon: Icons.play_arrow_rounded,
-                  label: loc.t('play'),
-                  primary: true,
-                  onTap: () {
-                    // First user gesture → safe to start audio on web.
-                    AudioManager.instance.startAmbient();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const GameScreen(),
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final landscape = c.maxWidth > c.maxHeight;
+              final body = landscape
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: Center(child: _branding(loc))),
+                        Expanded(child: Center(child: _controls(context, loc))),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 24),
+                          _branding(loc),
+                          const SizedBox(height: 36),
+                          _controls(context, loc),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     );
-                  },
-                ),
-                const SizedBox(height: 14),
-                _MenuButton(
-                  icon: Icons.help_outline_rounded,
-                  label: loc.t('howToPlay'),
-                  onTap: () => _showHowTo(context, loc),
-                ),
-                const Spacer(flex: 2),
-                const _LanguageToggle(),
-                const SizedBox(height: 24),
-              ],
-            ),
+              return Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: landscape
+                        ? body
+                        : Center(child: body),
+                  ),
+                  const Positioned(
+                    top: 6,
+                    right: 10,
+                    child: SoundToggleButton(),
+                  ),
+                ],
+              );
+            },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _branding(LocaleController loc) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _LogoTiles(),
+        const SizedBox(height: 24),
+        Text(
+          loc.t('appTitle'),
+          style: const TextStyle(
+            fontSize: 46,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 3,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          loc.t('appSubtitle'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 15,
+            color: AppTheme.textSecondary,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _controls(BuildContext context, LocaleController loc) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _MenuButton(
+            icon: Icons.play_arrow_rounded,
+            label: loc.t('play'),
+            primary: true,
+            onTap: () {
+              // First user gesture → safe to start audio on web.
+              AudioManager.instance.startAmbient();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const GameScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          _MenuButton(
+            icon: Icons.help_outline_rounded,
+            label: loc.t('howToPlay'),
+            onTap: () => _showHowTo(context, loc),
+          ),
+          const SizedBox(height: 24),
+          const _LanguageToggle(),
+        ],
       ),
     );
   }
