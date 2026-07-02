@@ -11,6 +11,15 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = LocaleController.instance;
+    // Listen directly so the menu rebuilds on language changes even though it
+    // is provided as a (const) `home` widget.
+    return AnimatedBuilder(
+      animation: loc,
+      builder: (context, _) => _buildMenu(context, loc),
+    );
+  }
+
+  Widget _buildMenu(BuildContext context, LocaleController loc) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(

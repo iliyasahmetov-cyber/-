@@ -279,7 +279,7 @@ class _GameScreenState extends State<GameScreen>
           ),
           child: SafeArea(
             child: AnimatedBuilder(
-              animation: _engine,
+              animation: Listenable.merge([_engine, _loc]),
               builder: (context, _) => Column(
                 children: [
                   _buildHud(),
