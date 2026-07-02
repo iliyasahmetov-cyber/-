@@ -32,45 +32,36 @@ class MainMenuScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, c) {
-              final landscape = c.maxWidth > c.maxHeight;
-              final body = landscape
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(child: Center(child: _branding(loc))),
-                        Expanded(child: Center(child: _controls(context, loc))),
-                      ],
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 24),
-                          _branding(loc),
-                          const SizedBox(height: 36),
-                          _controls(context, loc),
-                          const SizedBox(height: 16),
-                        ],
+          child: Stack(
+            children: [
+              // One tidy, centered block for every orientation; scrolls only if
+              // the screen is too short.
+              LayoutBuilder(
+                builder: (context, c) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: c.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _branding(loc),
+                            const SizedBox(height: 24),
+                            _controls(context, loc),
+                          ],
+                        ),
                       ),
-                    );
-              return Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: landscape
-                        ? body
-                        : Center(child: body),
+                    ),
                   ),
-                  const Positioned(
-                    top: 6,
-                    right: 10,
-                    child: SoundToggleButton(),
-                  ),
-                ],
-              );
-            },
+                ),
+              ),
+              const Positioned(
+                top: 6,
+                right: 10,
+                child: SoundToggleButton(),
+              ),
+            ],
           ),
         ),
       ),
@@ -82,24 +73,24 @@ class MainMenuScreen extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const _LogoTiles(),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Text(
           loc.t('appTitle'),
           style: const TextStyle(
-            fontSize: 46,
+            fontSize: 36,
             fontWeight: FontWeight.w700,
             letterSpacing: 3,
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           loc.t('appSubtitle'),
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: 14,
             color: AppTheme.textSecondary,
-            height: 1.4,
+            height: 1.3,
           ),
         ),
       ],
@@ -174,16 +165,16 @@ class _LogoTiles extends StatelessWidget {
   Widget build(BuildContext context) {
     const ids = [1, 6, 9, 5];
     return SizedBox(
-      height: 82,
+      height: 58,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           for (final id in ids)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 3),
               child: SizedBox(
-                width: 74,
-                height: 82,
+                width: 52,
+                height: 58,
                 child: CustomPaint(
                   painter: TilePainter(
                     tileId: id,
@@ -215,21 +206,21 @@ class _MenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 60,
+      height: 52,
       child: FilledButton.icon(
         style: FilledButton.styleFrom(
           backgroundColor: primary ? AppTheme.accent : AppTheme.surfaceHigh,
           foregroundColor: primary ? Colors.black87 : AppTheme.textPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
         onPressed: onTap,
-        icon: Icon(icon, size: 26),
+        icon: Icon(icon, size: 22),
         label: Text(label),
       ),
     );

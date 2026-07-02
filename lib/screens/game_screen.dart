@@ -371,13 +371,9 @@ class _GameScreenState extends State<GameScreen>
                 icon: const Icon(Icons.arrow_back_rounded,
                     color: AppTheme.textPrimary),
               ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                tooltip: _loc.t('pause'),
-                onPressed: _pauseGame,
-                icon: const Icon(Icons.pause_circle_outline_rounded,
-                    color: AppTheme.textPrimary),
-              ),
+              const SizedBox(width: 4),
+              _PauseButton(onTap: _pauseGame, label: _loc.t('pause')),
+              const SizedBox(width: 8),
               _pill(Icons.layers_rounded, '${_engine.level}',
                   label: _loc.t('level')),
               const SizedBox(width: 8),
@@ -391,8 +387,6 @@ class _GameScreenState extends State<GameScreen>
               ),
               const Spacer(),
               const SoundToggleButton(),
-              const SizedBox(width: 8),
-              _LangMiniToggle(loc: _loc),
             ],
           ),
           const SizedBox(height: 6),
@@ -443,54 +437,49 @@ class _GameScreenState extends State<GameScreen>
           Row(
             children: [
               IconButton(
+                visualDensity: VisualDensity.compact,
                 onPressed: _confirmQuit,
                 icon: const Icon(Icons.arrow_back_rounded,
                     color: AppTheme.textPrimary),
               ),
-              IconButton(
-                tooltip: _loc.t('pause'),
-                onPressed: _pauseGame,
-                icon: const Icon(Icons.pause_circle_outline_rounded,
-                    color: AppTheme.textPrimary),
-              ),
+              const Spacer(),
+              // Emphasized pause control.
+              _PauseButton(onTap: _pauseGame, label: _loc.t('pause')),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           _pill(Icons.layers_rounded, '${_engine.level}',
               label: _loc.t('level'), stretch: true),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _pill(Icons.star_rounded, '${_engine.score}',
               label: _loc.t('score'), stretch: true),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _pill(Icons.timer_outlined, _engine.formattedTime,
               label: _loc.t('time'), highlight: low, stretch: true),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _TimeBar(progress: _engine.timeProgress, low: low),
           const Spacer(),
           SizedBox(
-            height: 54,
+            height: 46,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.accentSoft,
                 foregroundColor: Colors.black87,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 textStyle: const TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 15, fontWeight: FontWeight.w700),
               ),
               onPressed: _useHint,
-              icon: const Icon(Icons.lightbulb_outline_rounded),
+              icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
               label: Text(_loc.t('hint')),
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SoundToggleButton(),
-              _LangMiniToggle(loc: _loc),
-            ],
+          const SizedBox(height: 8),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: SoundToggleButton(),
           ),
         ],
       ),
@@ -731,45 +720,37 @@ class _TimeBar extends StatelessWidget {
   }
 }
 
-class _LangMiniToggle extends StatelessWidget {
-  const _LangMiniToggle({required this.loc});
-  final LocaleController loc;
+/// Emphasized pause control (amber pill) so it clearly stands out.
+class _PauseButton extends StatelessWidget {
+  const _PauseButton({required this.onTap, required this.label});
+
+  final VoidCallback onTap;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
+    return Material(
+      color: AppTheme.accent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.surfaceHigh),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _chip('РУС', AppLanguage.ru),
-          _chip('ENG', AppLanguage.en),
-        ],
-      ),
-    );
-  }
-
-  Widget _chip(String label, AppLanguage lang) {
-    final selected = loc.language == lang;
-    return GestureDetector(
-      onTap: () => loc.setLanguage(lang),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.black87 : AppTheme.textSecondary,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.pause_rounded, color: Colors.black87, size: 18),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       ),
