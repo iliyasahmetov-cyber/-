@@ -37,24 +37,42 @@ class MainMenuScreen extends StatelessWidget {
               // One tidy, centered block for every orientation; scrolls only if
               // the screen is too short.
               LayoutBuilder(
-                builder: (context, c) => SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: c.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
-                      child: Center(
-                        child: Column(
+                builder: (context, c) {
+                  final landscape = c.maxWidth > c.maxHeight;
+                  final Widget inner = landscape
+                      // Two columns, centered and kept close together so it is
+                      // tidy (not scattered) AND everything — including the
+                      // language toggle — fits without scrolling.
+                      ? ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Flexible(child: _branding(loc)),
+                              const SizedBox(width: 28),
+                              Flexible(child: _controls(context, loc)),
+                            ],
+                          ),
+                        )
+                      : Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _branding(loc),
                             const SizedBox(height: 24),
                             _controls(context, loc),
                           ],
-                        ),
+                        );
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: c.maxHeight),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+                        child: Center(child: inner),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               const Positioned(
                 top: 6,
