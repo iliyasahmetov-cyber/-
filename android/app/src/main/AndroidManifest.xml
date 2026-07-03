@@ -32,12 +32,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Google Mobile Ads (AdMob) application id.
-             TODO(owner): replace this Google TEST id with your real AdMob App ID
-             (format ca-app-pub-6393368605159065~XXXXXXXXXX). -->
+        <!-- Google Mobile Ads (AdMob) application id — owner's real Android App ID. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-6393368605159065~8215026773" />
 
         <!-- Do not auto-initialise the Ads SDK at process start; we init lazily
              (guarded) on first ad request so ads can never crash the launch. -->

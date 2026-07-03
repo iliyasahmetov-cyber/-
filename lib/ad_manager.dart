@@ -43,7 +43,10 @@ class AdManager {
       final result = await rewardedAds.show(rk);
       if (result == RewardedResult.earned) return true;
       if (result == RewardedResult.dismissed) return false;
-      // unavailable (no fill / not loaded yet) → fall back so play continues.
+      // unavailable (no fill / not loaded yet) → show why (diagnostic), then
+      // fall back to the simulated ad so play continues.
+      if (!context.mounted) return false;
+      await _showAdDiagnostic(context, rewardedAds.lastError);
       if (!context.mounted) return false;
       await _playSimulatedVideo(context);
       return true;
@@ -51,6 +54,35 @@ class AdManager {
 
     await _playSimulatedVideo(context);
     return true;
+  }
+
+  /// Temporary on-screen diagnostic: shows why a real ad could not be shown
+  /// (there is no logcat access in the build environment). Safe to remove once
+  /// real ads are confirmed working.
+  Future<void> _showAdDiagnostic(BuildContext context, String? error) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Ad debug',
+            style: TextStyle(color: AppTheme.textPrimary, fontSize: 16)),
+        content: Text(
+          error == null
+              ? 'No ad loaded yet (no error reported). Showing simulated ad.'
+              : 'Real ad not shown.\n\n$error',
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool?> _showPrompt(BuildContext context, AdRewardKind kind) {

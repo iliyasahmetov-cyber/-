@@ -29,6 +29,9 @@ abstract class RewardedAds {
   /// Whether real rewarded ads are available on this platform.
   bool get isSupported;
 
+  /// Human-readable reason the last ad load/show failed (for diagnostics).
+  String? get lastError;
+
   /// Initialise the SDK and start preloading ads.
   Future<void> init();
 

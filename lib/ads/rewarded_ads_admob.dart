@@ -21,6 +21,7 @@ class _AdMobRewardedAds implements RewardedAds {
   RewardedInterstitialAd? _hintAd;
   bool _initStarted = false;
   bool _initDone = false;
+  String? _lastError;
 
   @override
   bool get isSupported =>
@@ -28,7 +29,14 @@ class _AdMobRewardedAds implements RewardedAds {
       defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
-  Future<void> init() async {}
+  String? get lastError => _lastError;
+
+  /// Called at app startup: initialise and start preloading so ads are ready
+  /// by the time the player opens one.
+  @override
+  Future<void> init() async {
+    await _ensureInit();
+  }
 
   Future<void> _ensureInit() async {
     if (_initDone || _initStarted || !isSupported) return;
@@ -38,7 +46,10 @@ class _AdMobRewardedAds implements RewardedAds {
       _initDone = true;
       _loadTime();
       _loadHint();
-    } catch (_) {}
+    } catch (e) {
+      _initStarted = false; // allow a retry on next show
+      _lastError = 'init: $e';
+    }
   }
 
   void _loadTime() {
@@ -48,10 +59,15 @@ class _AdMobRewardedAds implements RewardedAds {
         request: const AdRequest(),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) => _timeAd = ad,
-          onAdFailedToLoad: (_) => _timeAd = null,
+          onAdFailedToLoad: (err) {
+            _timeAd = null;
+            _lastError = 'time load: ${err.code} ${err.message}';
+          },
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      _lastError = 'time load ex: $e';
+    }
   }
 
   void _loadHint() {
@@ -61,10 +77,15 @@ class _AdMobRewardedAds implements RewardedAds {
         request: const AdRequest(),
         rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
           onAdLoaded: (ad) => _hintAd = ad,
-          onAdFailedToLoad: (_) => _hintAd = null,
+          onAdFailedToLoad: (err) {
+            _hintAd = null;
+            _lastError = 'hint load: ${err.code} ${err.message}';
+          },
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      _lastError = 'hint load ex: $e';
+    }
   }
 
   /// Poll until the requested ad has loaded, or the timeout elapses.
@@ -83,9 +104,8 @@ class _AdMobRewardedAds implements RewardedAds {
     await _ensureInit();
     if (!_initDone) return RewardedResult.unavailable;
 
-    // First request right after init: give the ad a chance to finish loading
-    // before falling back to the simulated ad.
-    await _waitUntilLoaded(kind, const Duration(seconds: 8));
+    // Give the ad a chance to finish loading before falling back.
+    await _waitUntilLoaded(kind, const Duration(seconds: 12));
 
     final completer = Completer<RewardedResult>();
     var earned = false;

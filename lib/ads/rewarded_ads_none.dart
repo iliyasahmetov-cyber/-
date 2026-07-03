@@ -9,6 +9,9 @@ class _NoneRewardedAds implements RewardedAds {
   bool get isSupported => false;
 
   @override
+  String? get lastError => null;
+
+  @override
   Future<void> init() async {}
 
   @override
