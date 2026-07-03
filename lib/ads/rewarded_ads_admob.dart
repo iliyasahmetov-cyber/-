@@ -67,11 +67,25 @@ class _AdMobRewardedAds implements RewardedAds {
     } catch (_) {}
   }
 
+  /// Poll until the requested ad has loaded, or the timeout elapses.
+  Future<void> _waitUntilLoaded(RewardedKind kind, Duration timeout) async {
+    final end = DateTime.now().add(timeout);
+    bool loaded() =>
+        kind == RewardedKind.time ? _timeAd != null : _hintAd != null;
+    while (!loaded() && DateTime.now().isBefore(end)) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+  }
+
   @override
   Future<RewardedResult> show(RewardedKind kind) async {
     if (!isSupported) return RewardedResult.unavailable;
     await _ensureInit();
     if (!_initDone) return RewardedResult.unavailable;
+
+    // First request right after init: give the ad a chance to finish loading
+    // before falling back to the simulated ad.
+    await _waitUntilLoaded(kind, const Duration(seconds: 8));
 
     final completer = Completer<RewardedResult>();
     var earned = false;
