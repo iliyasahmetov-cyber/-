@@ -19,9 +19,14 @@ RewardedAds createRewardedAdsImpl() => _AdMobRewardedAds();
 class _AdMobRewardedAds implements RewardedAds {
   RewardedAd? _timeAd;
   RewardedInterstitialAd? _hintAd;
-  bool _initStarted = false;
   bool _initDone = false;
   String? _lastError;
+
+  /// Shared init future so concurrent callers (startup + first ad) all wait for
+  /// the same MobileAds.initialise() instead of bailing out early.
+  Future<void>? _initFuture;
+
+  static const _loadTimeout = Duration(seconds: 15);
 
   @override
   bool get isSupported =>
@@ -39,15 +44,19 @@ class _AdMobRewardedAds implements RewardedAds {
   }
 
   Future<void> _ensureInit() async {
-    if (_initDone || _initStarted || !isSupported) return;
-    _initStarted = true;
+    if (_initDone || !isSupported) return;
+    _initFuture ??= _runInit();
+    await _initFuture;
+  }
+
+  Future<void> _runInit() async {
     try {
       await MobileAds.instance.initialize();
       _initDone = true;
       _loadTime();
       _loadHint();
     } catch (e) {
-      _initStarted = false; // allow a retry on next show
+      _initFuture = null; // allow a retry on next show
       _lastError = 'init: $e';
     }
   }
@@ -99,38 +108,32 @@ class _AdMobRewardedAds implements RewardedAds {
   }
 
   @override
+  bool isReady(RewardedKind kind) =>
+      kind == RewardedKind.time ? _timeAd != null : _hintAd != null;
+
+  @override
+  Future<bool> waitForReady(RewardedKind kind, Duration timeout) async {
+    if (!isSupported) return false;
+    await _ensureInit();
+    if (!_initDone) return false;
+    if (isReady(kind)) return true;
+    await _waitUntilLoaded(kind, timeout);
+    return isReady(kind);
+  }
+
+  String _kindLabel(RewardedKind kind) =>
+      kind == RewardedKind.time ? 'time rewarded' : 'hint rewarded interstitial';
+
+  @override
   Future<RewardedResult> show(RewardedKind kind) async {
     if (!isSupported) return RewardedResult.unavailable;
     await _ensureInit();
-    if (!_initDone) return RewardedResult.unavailable;
-
-    // Give the ad a chance to finish loading before falling back.
-    await _waitUntilLoaded(kind, const Duration(seconds: 12));
+    if (!_initDone) {
+      _lastError ??= 'AdMob init did not complete';
+      return RewardedResult.unavailable;
+    }
 
     final completer = Completer<RewardedResult>();
-    var earned = false;
-
-    void done(RewardedResult r) {
-      if (!completer.isCompleted) completer.complete(r);
-    }
-
-    void attach(dynamic ad, void Function() reload) {
-      ad.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (dynamic a) {
-          a.dispose();
-          reload();
-          done(earned ? RewardedResult.earned : RewardedResult.dismissed);
-        },
-        onAdFailedToShowFullScreenContent: (dynamic a, dynamic e) {
-          a.dispose();
-          reload();
-          done(RewardedResult.unavailable);
-        },
-      );
-      ad.show(
-        onUserEarnedReward: (dynamic a, dynamic reward) => earned = true,
-      );
-    }
 
     try {
       if (kind == RewardedKind.time) {
@@ -138,21 +141,74 @@ class _AdMobRewardedAds implements RewardedAds {
         _timeAd = null;
         if (ad == null) {
           _loadTime();
+          _lastError ??=
+              '${_kindLabel(kind)}: not loaded after ${_loadTimeout.inSeconds}s';
           return RewardedResult.unavailable;
         }
-        attach(ad, _loadTime);
+        _showTimeAd(ad, completer);
       } else {
         final ad = _hintAd;
         _hintAd = null;
         if (ad == null) {
           _loadHint();
+          _lastError ??=
+              '${_kindLabel(kind)}: not loaded after ${_loadTimeout.inSeconds}s';
           return RewardedResult.unavailable;
         }
-        attach(ad, _loadHint);
+        _showHintAd(ad, completer);
       }
-    } catch (_) {
+    } catch (e) {
+      _lastError = 'show ex: $e';
       return RewardedResult.unavailable;
     }
     return completer.future;
+  }
+
+  void _showTimeAd(RewardedAd ad, Completer<RewardedResult> completer) {
+    var earned = false;
+    void done(RewardedResult r) {
+      if (!completer.isCompleted) completer.complete(r);
+    }
+
+    ad.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(
+      onAdDismissedFullScreenContent: (a) {
+        a.dispose();
+        _loadTime();
+        done(earned ? RewardedResult.earned : RewardedResult.dismissed);
+      },
+      onAdFailedToShowFullScreenContent: (a, e) {
+        a.dispose();
+        _loadTime();
+        _lastError = 'show failed: ${e.code} ${e.message}';
+        done(RewardedResult.unavailable);
+      },
+    );
+    ad.show(onUserEarnedReward: (_, __) => earned = true);
+  }
+
+  void _showHintAd(
+    RewardedInterstitialAd ad,
+    Completer<RewardedResult> completer,
+  ) {
+    var earned = false;
+    void done(RewardedResult r) {
+      if (!completer.isCompleted) completer.complete(r);
+    }
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback<RewardedInterstitialAd>(
+      onAdDismissedFullScreenContent: (a) {
+        a.dispose();
+        _loadHint();
+        done(earned ? RewardedResult.earned : RewardedResult.dismissed);
+      },
+      onAdFailedToShowFullScreenContent: (a, e) {
+        a.dispose();
+        _loadHint();
+        _lastError = 'show failed: ${e.code} ${e.message}';
+        done(RewardedResult.unavailable);
+      },
+    );
+    ad.show(onUserEarnedReward: (_, __) => earned = true);
   }
 }

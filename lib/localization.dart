@@ -131,6 +131,10 @@ class AppStrings {
       AppLanguage.ru: 'Нет',
       AppLanguage.en: 'No',
     },
+    'ok': {
+      AppLanguage.ru: 'OK',
+      AppLanguage.en: 'OK',
+    },
     // --- Ad / reward loop strings ---
     'adTimeUpTitle': {
       AppLanguage.ru: 'Время вышло!',
@@ -165,6 +169,14 @@ class AppStrings {
     'adSkipInfo': {
       AppLanguage.ru: 'Награда будет начислена после просмотра.',
       AppLanguage.en: 'Your reward is granted after the video.',
+    },
+    'adLoading': {
+      AppLanguage.ru: 'Загрузка рекламы…',
+      AppLanguage.en: 'Loading ad…',
+    },
+    'adUnavailable': {
+      AppLanguage.ru: 'Реклама сейчас недоступна. Попробуйте позже.',
+      AppLanguage.en: 'Ad unavailable right now. Please try again later.',
     },
     'rewardGranted': {
       AppLanguage.ru: 'Награда получена!',
