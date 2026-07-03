@@ -7,7 +7,7 @@ class AdConfig {
   ///
   /// Set to `false` for production so the owner's real units are used. Real
   /// ads also require the owner's real App ID in AndroidManifest.xml / Info.plist.
-  static const bool useTestAds = true;
+  static const bool useTestAds = false;
 
   // --- Owner's real AdMob units ---
   static const String _timeRewardReal = 'ca-app-pub-6393368605159065/4256434610';

@@ -15,8 +15,8 @@ Future<void> main() async {
     DeviceOrientation.landscapeRight,
   ]);
   AudioManager.instance.init();
-  // Initialise AdMob and start preloading rewarded ads (no-op on web).
-  await rewardedAds.init();
+  // Start AdMob init + preload in the background — menu opens instantly.
+  rewardedAds.init();
   runApp(const PaoPaoApp());
 }
 

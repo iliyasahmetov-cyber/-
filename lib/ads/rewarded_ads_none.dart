@@ -15,6 +15,13 @@ class _NoneRewardedAds implements RewardedAds {
   Future<void> init() async {}
 
   @override
+  bool isReady(RewardedKind kind) => false;
+
+  @override
+  Future<bool> waitForReady(RewardedKind kind, Duration timeout) async =>
+      false;
+
+  @override
   Future<RewardedResult> show(RewardedKind kind) async =>
       RewardedResult.unavailable;
 }

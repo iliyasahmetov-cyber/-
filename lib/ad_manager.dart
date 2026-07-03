@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'ads/rewarded_ads.dart';
@@ -39,26 +40,122 @@ class AdManager {
 
     // Real AdMob on Android/iOS; simulated elsewhere or when no ad is loaded.
     if (rewardedAds.isSupported) {
-      final rk = kind == AdRewardKind.hint ? RewardedKind.hint : RewardedKind.time;
+      final rk =
+          kind == AdRewardKind.hint ? RewardedKind.hint : RewardedKind.time;
+
+      // Preload runs in the background from app start. If the ad isn't ready
+      // yet, show a brief loading overlay — no need to wait on the main menu.
+      if (!rewardedAds.isReady(rk)) {
+        if (!context.mounted) return false;
+        final ready = await _showLoadingWhile(
+          context,
+          rewardedAds.waitForReady(rk, const Duration(seconds: 15)),
+        );
+        if (!ready) {
+          if (!context.mounted) return false;
+          await _showAdUnavailable(context);
+          return false;
+        }
+      }
+
+      if (!context.mounted) return false;
       final result = await rewardedAds.show(rk);
       if (result == RewardedResult.earned) return true;
       if (result == RewardedResult.dismissed) return false;
-      // unavailable (no fill / not loaded yet) → show why (diagnostic), then
-      // fall back to the simulated ad so play continues.
+
+      // Real ad failed to show — no free reward in production.
       if (!context.mounted) return false;
-      await _showAdDiagnostic(context, rewardedAds.lastError);
-      if (!context.mounted) return false;
-      await _playSimulatedVideo(context);
-      return true;
+      if (kDebugMode) {
+        await _showAdDiagnostic(context, rewardedAds.lastError);
+        if (!context.mounted) return false;
+        await _playSimulatedVideo(context);
+        return true;
+      }
+      await _showAdUnavailable(context);
+      return false;
     }
 
     await _playSimulatedVideo(context);
     return true;
   }
 
-  /// Temporary on-screen diagnostic: shows why a real ad could not be shown
-  /// (there is no logcat access in the build environment). Safe to remove once
-  /// real ads are confirmed working.
+  /// Runs [task] under a loading spinner (used while AdMob finishes downloading).
+  Future<T> _showLoadingWhile<T>(BuildContext context, Future<T> task) async {
+    unawaited(_showAdLoading(context));
+    // Let the loading dialog paint before we block on the network.
+    await Future<void>.delayed(Duration.zero);
+    try {
+      return await task;
+    } finally {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+  }
+
+  /// Shown only while the ad is still downloading from AdMob.
+  Future<void> _showAdLoading(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AnimatedBuilder(
+        animation: _loc,
+        builder: (ctx, _) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            backgroundColor: AppTheme.surface,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppTheme.accent,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  _loc.t('adLoading'),
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAdUnavailable(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => AnimatedBuilder(
+        animation: _loc,
+        builder: (ctx, _) => AlertDialog(
+          backgroundColor: AppTheme.surface,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Text(
+            _loc.t('adUnavailable'),
+            style: const TextStyle(color: AppTheme.textPrimary, height: 1.4),
+          ),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.accent),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(_loc.t('ok')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Debug-only diagnostic: shows why a real ad could not be shown.
   Future<void> _showAdDiagnostic(BuildContext context, String? error) {
     return showDialog<void>(
       context: context,

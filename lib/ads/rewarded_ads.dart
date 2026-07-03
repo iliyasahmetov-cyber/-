@@ -35,6 +35,12 @@ abstract class RewardedAds {
   /// Initialise the SDK and start preloading ads.
   Future<void> init();
 
+  /// Whether a rewarded ad of [kind] is loaded and ready to show.
+  bool isReady(RewardedKind kind);
+
+  /// Wait until an ad of [kind] is loaded, or [timeout] elapses.
+  Future<bool> waitForReady(RewardedKind kind, Duration timeout);
+
   /// Show a rewarded ad of [kind]. Reloads the next one automatically.
   Future<RewardedResult> show(RewardedKind kind);
 }

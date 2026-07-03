@@ -107,6 +107,20 @@ class _AdMobRewardedAds implements RewardedAds {
     }
   }
 
+  @override
+  bool isReady(RewardedKind kind) =>
+      kind == RewardedKind.time ? _timeAd != null : _hintAd != null;
+
+  @override
+  Future<bool> waitForReady(RewardedKind kind, Duration timeout) async {
+    if (!isSupported) return false;
+    await _ensureInit();
+    if (!_initDone) return false;
+    if (isReady(kind)) return true;
+    await _waitUntilLoaded(kind, timeout);
+    return isReady(kind);
+  }
+
   String _kindLabel(RewardedKind kind) =>
       kind == RewardedKind.time ? 'time rewarded' : 'hint rewarded interstitial';
 
@@ -118,9 +132,6 @@ class _AdMobRewardedAds implements RewardedAds {
       _lastError ??= 'AdMob init did not complete';
       return RewardedResult.unavailable;
     }
-
-    // Give the ad a chance to finish loading before falling back.
-    await _waitUntilLoaded(kind, _loadTimeout);
 
     final completer = Completer<RewardedResult>();
 
