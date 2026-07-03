@@ -7,7 +7,7 @@ import 'localization.dart';
 import 'screens/main_menu.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Landscape gameplay: the 12×8 board is wider than tall, so tiles are larger.
   SystemChrome.setPreferredOrientations([
@@ -16,7 +16,7 @@ void main() {
   ]);
   AudioManager.instance.init();
   // Initialise AdMob and start preloading rewarded ads (no-op on web).
-  rewardedAds.init();
+  await rewardedAds.init();
   runApp(const PaoPaoApp());
 }
 
