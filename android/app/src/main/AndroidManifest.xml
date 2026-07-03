@@ -31,22 +31,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- Google Mobile Ads (AdMob) application id.
-             TODO(owner): replace this Google TEST id with your real AdMob App ID
-             (format ca-app-pub-6393368605159065~XXXXXXXXXX). -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
-
-        <!-- Do NOT auto-initialise the Ads SDK at process start. We initialise
-             it lazily (in Dart, guarded) only when the first ad is requested, so
-             the app can never crash on launch because of ads. -->
-        <provider
-            android:name="com.google.android.gms.ads.MobileAdsInitProvider"
-            android:authorities="${applicationId}.mobileadsinitprovider"
-            android:exported="false"
-            tools:node="remove" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
