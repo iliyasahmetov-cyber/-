@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'ads/rewarded_ads.dart';
 import 'localization.dart';
 import 'theme.dart';
 
@@ -31,9 +32,23 @@ class AdManager {
     BuildContext context,
     AdRewardKind kind,
   ) async {
+    // Opt-in prompt first (required for rewarded ads).
     final accepted = await _showPrompt(context, kind);
     if (accepted != true) return false;
     if (!context.mounted) return false;
+
+    // Real AdMob on Android/iOS; simulated elsewhere or when no ad is loaded.
+    if (rewardedAds.isSupported) {
+      final rk = kind == AdRewardKind.hint ? RewardedKind.hint : RewardedKind.time;
+      final result = await rewardedAds.show(rk);
+      if (result == RewardedResult.earned) return true;
+      if (result == RewardedResult.dismissed) return false;
+      // unavailable (no fill / not loaded yet) → fall back so play continues.
+      if (!context.mounted) return false;
+      await _playSimulatedVideo(context);
+      return true;
+    }
+
     await _playSimulatedVideo(context);
     return true;
   }

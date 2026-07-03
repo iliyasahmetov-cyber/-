@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'ads/rewarded_ads.dart';
 import 'audio_manager.dart';
 import 'localization.dart';
 import 'screens/main_menu.dart';
@@ -14,6 +15,8 @@ void main() {
     DeviceOrientation.landscapeRight,
   ]);
   AudioManager.instance.init();
+  // Initialise AdMob and start preloading rewarded ads (no-op on web).
+  rewardedAds.init();
   runApp(const PaoPaoApp());
 }
 
