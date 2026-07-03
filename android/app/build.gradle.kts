@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.paopao.paopao"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned to 35 for AGP 8.7 compatibility (Flutter defaults to 36 which AGP 8
+    // does not officially support yet).
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,7 +22,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

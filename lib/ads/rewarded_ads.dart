@@ -9,9 +9,8 @@
 // auto-init ContentProvider is removed in AndroidManifest.xml and the SDK is
 // initialised lazily, inside try/catch, only when the first ad is requested.
 // If anything goes wrong the app still runs and falls back to the simulated ad.
-// AdMob temporarily disabled (google_mobile_ads crashed at launch on-device
-// with this toolchain and can't be verified without a device). Simulation only.
-import 'rewarded_ads_none.dart';
+import 'rewarded_ads_none.dart'
+    if (dart.library.io) 'rewarded_ads_admob.dart';
 
 enum RewardedKind { time, hint }
 
