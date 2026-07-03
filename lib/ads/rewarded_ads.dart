@@ -1,12 +1,16 @@
 // Platform-agnostic rewarded-ads facade.
 //
-// NOTE: real Google AdMob (google_mobile_ads) integration is temporarily
-// disabled because google_mobile_ads 9.0.0 crashed at launch on-device with the
-// current toolchain (AGP 9 / compileSdk 36). The app uses the simulated ad
-// experience everywhere until real ads are re-added with a compatible setup.
-// The AdMob implementation is preserved in git history and can be restored via
-// a conditional import: `if (dart.library.io) 'rewarded_ads_admob.dart'`.
-import 'rewarded_ads_none.dart';
+// Real Google AdMob only works on Android/iOS (the plugin uses `dart:io`), so
+// we pick the implementation via a conditional import: the AdMob-backed one on
+// mobile, and a no-op stub everywhere else (e.g. Flutter web, used for local
+// testing). Callers use [rewardedAds] and never import the plugin directly.
+//
+// IMPORTANT (crash-safety): the AdMob SDK is NOT touched at app startup — the
+// auto-init ContentProvider is removed in AndroidManifest.xml and the SDK is
+// initialised lazily, inside try/catch, only when the first ad is requested.
+// If anything goes wrong the app still runs and falls back to the simulated ad.
+import 'rewarded_ads_none.dart'
+    if (dart.library.io) 'rewarded_ads_admob.dart';
 
 enum RewardedKind { time, hint }
 
