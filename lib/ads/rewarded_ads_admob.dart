@@ -123,30 +123,6 @@ class _AdMobRewardedAds implements RewardedAds {
     await _waitUntilLoaded(kind, _loadTimeout);
 
     final completer = Completer<RewardedResult>();
-    var earned = false;
-
-    void done(RewardedResult r) {
-      if (!completer.isCompleted) completer.complete(r);
-    }
-
-    void attach(dynamic ad, void Function() reload) {
-      ad.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (dynamic a) {
-          a.dispose();
-          reload();
-          done(earned ? RewardedResult.earned : RewardedResult.dismissed);
-        },
-        onAdFailedToShowFullScreenContent: (dynamic a, AdError e) {
-          a.dispose();
-          reload();
-          _lastError = 'show failed: ${e.code} ${e.message}';
-          done(RewardedResult.unavailable);
-        },
-      );
-      ad.show(
-        onUserEarnedReward: (dynamic a, dynamic reward) => earned = true,
-      );
-    }
 
     try {
       if (kind == RewardedKind.time) {
@@ -158,7 +134,7 @@ class _AdMobRewardedAds implements RewardedAds {
               '${_kindLabel(kind)}: not loaded after ${_loadTimeout.inSeconds}s';
           return RewardedResult.unavailable;
         }
-        attach(ad, _loadTime);
+        _showTimeAd(ad, completer);
       } else {
         final ad = _hintAd;
         _hintAd = null;
@@ -168,12 +144,60 @@ class _AdMobRewardedAds implements RewardedAds {
               '${_kindLabel(kind)}: not loaded after ${_loadTimeout.inSeconds}s';
           return RewardedResult.unavailable;
         }
-        attach(ad, _loadHint);
+        _showHintAd(ad, completer);
       }
     } catch (e) {
       _lastError = 'show ex: $e';
       return RewardedResult.unavailable;
     }
     return completer.future;
+  }
+
+  void _showTimeAd(RewardedAd ad, Completer<RewardedResult> completer) {
+    var earned = false;
+    void done(RewardedResult r) {
+      if (!completer.isCompleted) completer.complete(r);
+    }
+
+    ad.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(
+      onAdDismissedFullScreenContent: (a) {
+        a.dispose();
+        _loadTime();
+        done(earned ? RewardedResult.earned : RewardedResult.dismissed);
+      },
+      onAdFailedToShowFullScreenContent: (a, e) {
+        a.dispose();
+        _loadTime();
+        _lastError = 'show failed: ${e.code} ${e.message}';
+        done(RewardedResult.unavailable);
+      },
+    );
+    ad.show(onUserEarnedReward: (_, __) => earned = true);
+  }
+
+  void _showHintAd(
+    RewardedInterstitialAd ad,
+    Completer<RewardedResult> completer,
+  ) {
+    var earned = false;
+    void done(RewardedResult r) {
+      if (!completer.isCompleted) completer.complete(r);
+    }
+
+    ad.fullScreenContentCallback =
+        FullScreenContentCallback<RewardedInterstitialAd>(
+      onAdDismissedFullScreenContent: (a) {
+        a.dispose();
+        _loadHint();
+        done(earned ? RewardedResult.earned : RewardedResult.dismissed);
+      },
+      onAdFailedToShowFullScreenContent: (a, e) {
+        a.dispose();
+        _loadHint();
+        _lastError = 'show failed: ${e.code} ${e.message}';
+        done(RewardedResult.unavailable);
+      },
+    );
+    ad.show(onUserEarnedReward: (_, __) => earned = true);
   }
 }
