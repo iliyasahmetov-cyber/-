@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../ad_manager.dart';
 import '../audio_manager.dart';
@@ -34,6 +35,7 @@ class _GameScreenState extends State<GameScreen>
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _lineCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 420),
@@ -696,17 +698,6 @@ class _TimeBar extends StatelessWidget {
                                 ]
                               : null,
                         ),
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Text(
-                      LocaleController.instance.t('time'),
-                      style: TextStyle(
-                        fontSize: 9,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPrimary.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
