@@ -29,16 +29,11 @@ const List<Color> _inks = [
   Color(0xFF7F6E6E), // rosewood
 ];
 
-/// Tile ids whose glyphs (fern, coin rings, hills) need extra contrast on the
-/// dark slate tile face — boost ink ~14 % and draw slightly heavier strokes.
-const Set<int> _highContrastGlyphIds = {4, 8, 11, 12, 16};
-
-Color _boostInk(Color c, {double amount = 0.14}) {
-  final hsl = HSLColor.fromColor(c);
-  return hsl
-      .withSaturation((hsl.saturation + amount).clamp(0.0, 1.0))
-      .withLightness((hsl.lightness + amount * 0.75).clamp(0.0, 1.0))
-      .toColor();
+/// Normalise every glyph to the same brightness and saturation so no single
+/// hue (e.g. terracotta rings) pops more than the others on the slate tile.
+Color _uniformInk(Color base) {
+  final hsl = HSLColor.fromColor(base);
+  return hsl.withLightness(0.54).withSaturation(0.30).toColor();
 }
 
 /// Paints a single premium, textured tile plus its vector glyph.
@@ -185,9 +180,7 @@ class TilePainter extends CustomPainter {
   // --- Glyphs -------------------------------------------------------------
 
   void _paintGlyph(Canvas canvas, Rect outer, int id) {
-    final baseInk = _inks[(id - 1) % _inks.length];
-    final ink =
-        _highContrastGlyphIds.contains(id) ? _boostInk(baseInk) : baseInk;
+    final ink = _uniformInk(_inks[(id - 1) % _inks.length]);
     final side = outer.shortestSide;
     final box = Rect.fromCenter(
       center: outer.center,
@@ -198,12 +191,9 @@ class TilePainter extends CustomPainter {
     canvas.translate(box.center.dx, box.center.dy);
     final unit = box.width / 2;
 
-    final strokeW = side *
-        0.028 *
-        (_highContrastGlyphIds.contains(id) ? 1.18 : 1.0);
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeW
+      ..strokeWidth = side * 0.030
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..color = ink;
