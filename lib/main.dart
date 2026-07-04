@@ -14,6 +14,8 @@ Future<void> main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+  // Hide Android status + navigation bars; swipe from edge to reveal.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   AudioManager.instance.init();
   // Start AdMob init + preload in the background — menu opens instantly.
   rewardedAds.init();

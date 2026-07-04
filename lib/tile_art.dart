@@ -29,6 +29,16 @@ const List<Color> _inks = [
   Color(0xFF7F6E6E), // rosewood
 ];
 
+/// Boost every glyph ink equally (+14 % sat, +11 % lightness) so all icons
+/// read as bright as the boosted terracotta rings — no single hue pops out.
+Color _brightInk(Color base) {
+  final hsl = HSLColor.fromColor(base);
+  return hsl
+      .withSaturation((hsl.saturation + 0.14).clamp(0.0, 1.0))
+      .withLightness((hsl.lightness + 0.11).clamp(0.0, 1.0))
+      .toColor();
+}
+
 /// Paints a single premium, textured tile plus its vector glyph.
 class TilePainter extends CustomPainter {
   TilePainter({
@@ -173,7 +183,7 @@ class TilePainter extends CustomPainter {
   // --- Glyphs -------------------------------------------------------------
 
   void _paintGlyph(Canvas canvas, Rect outer, int id) {
-    final ink = _inks[(id - 1) % _inks.length];
+    final ink = _brightInk(_inks[(id - 1) % _inks.length]);
     final side = outer.shortestSide;
     final box = Rect.fromCenter(
       center: outer.center,
@@ -186,7 +196,7 @@ class TilePainter extends CustomPainter {
 
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = side * 0.028
+      ..strokeWidth = side * 0.033
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..color = ink;
