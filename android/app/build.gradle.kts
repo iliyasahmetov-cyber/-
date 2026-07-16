@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.paopao.paopao"
+    namespace = "com.bigbossinteractive.paopao"
     // Pinned to 35 for AGP 8.7 compatibility (Flutter defaults to 36 which AGP 8
     // does not officially support yet).
     compileSdk = 35
@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.paopao.paopao"
+        applicationId = "com.bigbossinteractive.paopao"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

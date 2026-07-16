@@ -1,4 +1,4 @@
-package com.paopao.paopao
+package com.bigbossinteractive.paopao
 
 import io.flutter.embedding.android.FlutterActivity
 
